@@ -16,10 +16,12 @@ namespace finshark.Controllers
     public class CommentController : ControllerBase
     {
         private readonly ICommentRepository _commentRepository;
+        private readonly IStockRepository _stockRepository;
 
-        public CommentController(ICommentRepository repository)
+        public CommentController(ICommentRepository repository, IStockRepository stockRepository)
         {
             _commentRepository = repository;
+            _stockRepository = stockRepository;
         }
 
         [HttpGet]
@@ -47,6 +49,11 @@ namespace finshark.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateCommentRequestDto commmentDto)
         {
+            if (!await _stockRepository.StockExists(commmentDto.StockId.Value))
+            {
+                return BadRequest("Stock does not exist");
+            }
+
             var commentModel = commmentDto.ToCommentFromCreateDto();
             await _commentRepository.CreateAsync(commentModel);
 
@@ -75,7 +82,7 @@ namespace finshark.Controllers
 
             if (commentModel == null)
             {
-                return NotFound();
+                return NotFound("Comment does not exist");
             }
 
             return NoContent();
